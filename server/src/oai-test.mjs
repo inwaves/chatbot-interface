@@ -59,6 +59,7 @@ function conversationLoop() {
 }
 
 function main() {
+  // TODO: Connect Redis as persistence layer.
   // try {
   //   const client = createClient();
   //   await client.connect();
