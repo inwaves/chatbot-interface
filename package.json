@@ -4,8 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node esbuild.mjs"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.20.2",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25"
+  }
 }
