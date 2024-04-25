@@ -1,6 +1,7 @@
 import OpenAI from "openai"
 import readline from "node:readline";
 import createClient from "redis";
+import { v4 as uuidv4 } from "uuid";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -50,7 +51,6 @@ async function chatCompletion(userInput, model = "gpt-3.5-turbo") {
 }
 
 function conversationLoop() {
-  console.log("Starting a new conversation with id: ")
   rl.question("User: ", async question => {
     const modelResponse = await chatCompletion(question);
     console.log("Assistant: %s", modelResponse);
@@ -59,15 +59,17 @@ function conversationLoop() {
 }
 
 function main() {
-  try {
-    const client = createClient();
-    await client.connect();
+  // try {
+  //   const client = createClient();
+  //   await client.connect();
+  //
+  //   for await (const { hashkey, conversation } of client.zScanIterator("conversations")) {
+  //     console.log("${hashkey} -> ${score}");
+  //   }
+  // }
 
-    for await (const { hashkey, conversation } of client.zScanIterator("conversations")) {
-      console.log("${hashkey} -> ${score}");
-    }
-  }
-
+  const uid = uuidv4();
+  console.log("Starting a new conversation with id: %s", uid)
   conversationLoop();
 }
 
