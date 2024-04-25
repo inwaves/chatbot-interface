@@ -24460,7 +24460,7 @@
   // src/index.tsx
   var import_client = __toESM(require_client());
   var import_jsx_runtime = __toESM(require_jsx_runtime());
-  var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "pasdasd" });
+  var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Whatever" });
   var rootContainer = document.getElementById("root");
   if (rootContainer) {
     const root = (0, import_client.createRoot)(rootContainer);
