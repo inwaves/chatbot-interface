@@ -130,6 +130,10 @@ class Conversation {
   }
 
   conversationLoop() {
+    /** This is a mocked conversation loop to test exclusively server-side.
+    In practice, the server will expose an API endpoint to call chatCompletion
+    directly, and the client will handle the conversation loop.
+    */
     return new Promise((resolve) => {
       const getUserInput = () => {
         this.rl.question("User: ", async (userInput) => {
@@ -151,10 +155,10 @@ class Conversation {
   async start() {
     await this.connectRedis();
     await this.initConversation();
-    await this.conversationLoop();
-    const history = await this.getConversationHistory();
+  }
+
+  async end() {
     await this.redisClient.quit();
-    return history;
   }
 }
 
