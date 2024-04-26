@@ -1,10 +1,18 @@
 import express from "express";
-import { Conversation } from "./run-conversation.mjs";
+import cors from "cors";
+import { Conversation } from "./conversation.mjs";
 
 const app = express();
 const port = 3001;
 
-app.get("/api/conversation", async (req, res) => {
+app.use(cors());
+app.use(express.json());
+
+app.get("/api/read_conversation", async (req, res) => {
+  res.json("Hello world!");
+});
+
+app.post("/api/start_conversation", async (req, res) => {
   const conversation = new Conversation();
 
   await conversation.start();

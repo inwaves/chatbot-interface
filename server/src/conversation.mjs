@@ -8,7 +8,7 @@ const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
 const DEFAULT_MODEL = "gpt-3.5-turbo";
 const openai = new OpenAI();
 
-class Conversation {
+export class Conversation {
   constructor(model = DEFAULT_MODEL, systemPrompt = DEFAULT_SYSTEM_PROMPT) {
     this.systemPrompt = systemPrompt;
     this.model = model;
@@ -169,5 +169,3 @@ async function main() {
   console.log("Conversation loop over...");
   console.log("Conversation history: ", JSON.stringify(history, null, 2));
 }
-
-main();
