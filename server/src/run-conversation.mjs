@@ -2,147 +2,168 @@ import readline from "node:readline";
 import OpenAI from "openai";
 import { createClient } from "redis";
 import { v4 as uuidv4 } from "uuid";
+import assert from "node:assert";
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-const systemPrompt = "You are a helpful AI assistant.";
-
+const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
+const DEFAULT_MODEL = "gpt-3.5-turbo";
 const openai = new OpenAI();
 
-async function getConversationHistory(redisClient, conversationId) {
-  /** Retrieves the conversation history from the persistence layer.
-   * @param: redisClient: The Redis client object.
-   * @param: conversationId: The unique identifier for the conversation.
-   * @return: The conversation history as an array of messages.
-   */
-
-  const conversationString = await redisClient.get(conversationId);
-  const conversationHistory = JSON.parse(conversationString);
-
-  // Some sanity checks.
-  assert("messages" in conversationHistory && "title" in conversationHistory);
-  assert(
-    typeof conversationHistory.messages === "array" &&
-      typeof conversationHistory.title === "string",
-  );
-
-  return conversationHistory.messages;
-}
-
-async function setConversationHistory(
-  redisClient,
-  conversationId,
-  newConversationHistory,
-) {
-  /** Sets the conversation history in the persistence layer.
-   * @param: redisClient: The Redis client object.
-   * @param: conversationId: The unique identifier for the conversation.
-   * @param: newConversationHistory: The updated conversation history.
-   */
-
-  const conversationTitle = await getConversationTitle(
-    redisClient,
-    conversationId,
-  );
-
-  // If the conversation has just started, generate and set a title.
-  if (conversationTitle == "") {
-    const conversationTitle = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "Summarise the following message into a short title.",
-        },
-        // Caution: assumes that the first message is the system prompt,
-        // and the second is the actual user input.
-        { role: "user", content: newConversationHistory[1].content },
-      ],
-    }).choices[0].message.content;
-    setConversationTitle(redisClient, conversationId, conversationTitle);
+class Conversation {
+  constructor(model = DEFAULT_MODEL, systemPrompt = DEFAULT_SYSTEM_PROMPT) {
+    this.systemPrompt = systemPrompt;
+    this.model = model;
+    this.conversationId = uuidv4();
+    console.log("Started conversationId: %s", this.conversationId);
+    this.redisClient;
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
   }
 
-  await redisClient.set(
-    conversationId,
-    JSON.stringify({
-      messages: newConversationHistory,
-      title: conversationTitle,
-    }),
-  );
-}
+  async connectRedis() {
+    try {
+      this.redisClient = createClient();
+      await this.redisClient.connect();
+      console.log("Connected to Redis!");
+    } catch (e) {
+      console.error("Redis connection error:", e);
+    }
+  }
 
-async function getConversationTitle(redisClient, conversationId) {
-  return await JSON.parse(redisClient.get(conversationId)).title;
-}
-
-async function setConversationTitle(redisClient, conversationId, title) {
-  const conversation = JSON.parse(await redisClient.get(conversationId));
-  await redisClient.set(
-    conversationId,
-    JSON.stringify({ messages: conversation.messages, title: title }),
-  );
-}
-
-async function chatCompletion(userInput, model = "gpt-3.5-turbo") {
-  let conversationHistory = getConversationHistory();
-
-  let currentMessage = { role: "user", content: userInput };
-  conversationHistory.push(currentMessage);
-
-  const response = await openai.chat.completions.create({
-    messages: conversationHistory,
-    model: model,
-  });
-  const modelMessage = response.choices[0].message;
-
-  conversationHistory.push(modelMessage);
-  setConversationHistory(conversationHistory); // Update the message history with the latest replies.
-
-  return modelMessage.content;
-}
-
-function conversationLoop() {
-  rl.question("User: ", async (question) => {
-    const modelResponse = await chatCompletion(question);
-    console.log("Assistant: %s", modelResponse);
-    conversationLoop();
-  });
-}
-
-async function main() {
-  const conversationId = uuidv4();
-  console.log("Starting a new conversation with id: %s", conversationId);
-
-  // TODO: Connect Redis as persistence layer.
-  try {
-    const redisClient = createClient();
-    await redisClient.connect();
-
-    console.log("Connected to redisClient!");
-
-    await redisClient.set(
-      conversationId,
+  async initConversation() {
+    await this.redisClient.set(
+      this.conversationId,
       JSON.stringify({
-        messages: [{ role: "system", content: systemPrompt }],
+        messages: [{ role: "system", content: this.systemPrompt }],
         title: "",
       }),
     );
+  }
 
-    const value = await redisClient.get(conversationId);
-    console.log(
-      "The conversationId was: %s\nHere is the placeholder: %s",
-      conversationId,
-      value,
+  async getConversationHistory() {
+    /** Retrieves the conversation history from the persistence layer.
+     * @return: The conversation history as an array of messages.
+     */
+
+    const conversationString = await this.redisClient.get(this.conversationId);
+    const conversationHistory = JSON.parse(conversationString);
+
+    // Some sanity checks.
+    assert("messages" in conversationHistory && "title" in conversationHistory);
+    assert(
+      Array.isArray(conversationHistory.messages) &&
+        typeof conversationHistory.title === "string",
     );
 
-    // conversationLoop();
-
-    await redisClient.quit();
-  } catch (e) {
-    console.error(e);
+    return conversationHistory.messages;
   }
+
+  async setConversationHistory(newConversationHistory) {
+    /** Sets the conversation history in the persistence layer.*/
+
+    const conversationTitle = await this.getConversationTitle(
+      this.redisClient,
+      this.conversationId,
+    );
+
+    // If the conversation has just started, generate and set a title.
+    if (conversationTitle == "") {
+      const response = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "Summarise the following message into a short title.",
+          },
+          // Caution: assumes that the first message is the system prompt,
+          // and the second is the actual user input.
+          { role: "user", content: newConversationHistory[1].content },
+        ],
+        model: this.model,
+      });
+      const conversationTitle = response.choices[0].message.content;
+      await this.setConversationTitle(conversationTitle);
+    }
+
+    await this.redisClient.set(
+      this.conversationId,
+      JSON.stringify({
+        messages: newConversationHistory,
+        title: conversationTitle,
+      }),
+    );
+  }
+
+  async getConversationTitle() {
+    const title = await JSON.parse(
+      await this.redisClient.get(this.conversationId),
+    ).title;
+    return title;
+  }
+
+  async setConversationTitle(title) {
+    const conversation = JSON.parse(
+      await this.redisClient.get(this.conversationId),
+    );
+    await this.redisClient.set(
+      this.conversationId,
+      JSON.stringify({ messages: conversation.messages, title: title }),
+    );
+  }
+
+  async chatCompletion(userInput) {
+    let conversationHistory = await this.getConversationHistory();
+
+    let currentMessage = { role: "user", content: userInput };
+    conversationHistory.push(currentMessage);
+
+    const response = await openai.chat.completions.create({
+      messages: conversationHistory,
+      model: this.model,
+    });
+    const modelMessage = response.choices[0].message;
+
+    conversationHistory.push(modelMessage);
+    await this.setConversationHistory(conversationHistory); // Update the message history with the latest replies.
+
+    return modelMessage.content;
+  }
+
+  conversationLoop() {
+    return new Promise((resolve) => {
+      const getUserInput = () => {
+        this.rl.question("User: ", async (userInput) => {
+          if (userInput == "end") {
+            console.log("Ending conversation...");
+            this.rl.close();
+            resolve();
+          } else {
+            const modelResponse = await this.chatCompletion(userInput);
+            console.log("Assistant: %s", modelResponse);
+            getUserInput();
+          }
+        });
+      };
+      getUserInput();
+    });
+  }
+
+  async start() {
+    await this.connectRedis();
+    await this.initConversation();
+    await this.conversationLoop();
+    const history = await this.getConversationHistory();
+    await this.redisClient.quit();
+    return history;
+  }
+}
+
+async function main() {
+  const conversation = new Conversation();
+  const history = await conversation.start();
+
+  console.log("Conversation loop over...");
+  console.log("Conversation history: ", JSON.stringify(history, null, 2));
 }
 
 main();
