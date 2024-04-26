@@ -1,6 +1,6 @@
 import OpenAI from "openai"
 import readline from "node:readline";
-import createClient from "redis";
+import { createClient } from "redis";
 import { v4 as uuidv4 } from "uuid";
 
 const rl = readline.createInterface({
@@ -58,20 +58,28 @@ function conversationLoop() {
   });
 }
 
-function main() {
-  // TODO: Connect Redis as persistence layer.
-  // try {
-  //   const client = createClient();
-  //   await client.connect();
-  //
-  //   for await (const { hashkey, conversation } of client.zScanIterator("conversations")) {
-  //     console.log("${hashkey} -> ${score}");
-  //   }
-  // }
-
+async function main() {
   const uid = uuidv4();
   console.log("Starting a new conversation with id: %s", uid)
-  conversationLoop();
+
+  // TODO: Connect Redis as persistence layer.
+  try {
+    const client = createClient();
+    await client.connect();
+
+    console.log("Connected to client!");
+
+    await client.set(uid, JSON.stringify({ messages: [], title: "" }));
+
+    const value = await client.get(uid);
+    console.log("The uid was: %s", uid);
+    // conversationLoop();
+
+    await client.quit();
+  } catch (e) {
+    console.error(e)
+  }
+
 }
 
 main();
