@@ -8,19 +8,28 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/read_conversation", async (req, res) => {
-  res.json("Hello world!");
+// TODO: implement this server-side, poll Redis for previous conversations
+// to display in a sidebar...
+app.get("/api/list_all_conversations", async (req, res) => {
+  return;
 });
 
+// TODO: Should get the contents of the current conversation.
+app.get("/api/get_conversation", async (req, res) => {
+  res.json("Server is running...");
+});
+
+// TODO: Should get the current conversation, then do conversation.chatCompletion(message)
+app.post("/api/send_message", async (req, res) => {
+  const userInput = req.body.message;
+  const reply = "Server received message: " + userInput;
+  res.json(reply);
+});
+
+// TODO: This ought to happen on connection to the server.
 app.post("/api/start_conversation", async (req, res) => {
   const conversation = new Conversation();
-
   await conversation.start();
-
-  const userMessage = getUserMessageFromRequest(req);
-  const response = await conversation.chatCompletion(userMessage);
-
-  res.json(response);
 });
 
 app.listen(port, () => {
