@@ -24462,15 +24462,7 @@
 
   // src/components/Card.tsx
   var import_jsx_runtime = __toESM(require_jsx_runtime());
-  function Card(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "border border-slate-300 rounded-lg inline-block px-3 py-3 space-y-1 min-w-64", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "font-bold", children: props.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: props.text })
-    ] });
-  }
-
-  // src/index.tsx
-  var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+  var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Whatever" });
   var rootContainer = document.getElementById("root");
   if (rootContainer) {
     const root = (0, import_client.createRoot)(rootContainer);
