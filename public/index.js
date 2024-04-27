@@ -24435,11 +24435,11 @@
               return jsxWithValidation(type, props, key, false);
             }
           }
-          var jsx2 = jsxWithValidationDynamic;
-          var jsxs = jsxWithValidationStatic;
+          var jsx3 = jsxWithValidationDynamic;
+          var jsxs2 = jsxWithValidationStatic;
           exports.Fragment = REACT_FRAGMENT_TYPE;
-          exports.jsx = jsx2;
-          exports.jsxs = jsxs;
+          exports.jsx = jsx3;
+          exports.jsxs = jsxs2;
         })();
       }
     }
@@ -24459,12 +24459,14 @@
 
   // src/index.tsx
   var import_client = __toESM(require_client());
+
+  // src/components/Card.tsx
   var import_jsx_runtime = __toESM(require_jsx_runtime());
   var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Whatever" });
   var rootContainer = document.getElementById("root");
   if (rootContainer) {
     const root = (0, import_client.createRoot)(rootContainer);
-    root.render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App, {}));
+    root.render(/* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Card, { title: "What are the", text: "trending metrics today?" }));
   }
 })();
 /*! Bundled license information:
