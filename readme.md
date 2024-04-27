@@ -12,7 +12,7 @@ Front-end:
 
 Back-end:
 
-- [ ] `Conversation` object actually contains the message history (easy: <90m);
+- [ ] [IN PROGRESS] `Conversation` object actually contains the message history (easy: <90m);
 - [ ] should route methods open and close a Redis client every time?
 - [ ] Serve all routes (medium: 1-3h)
 - [ ] Support other model providers like Together, possibly do this through Vercel AI SDK? (medium: 1-3h)

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { Conversation } from "./conversation.mjs";
+import { listAllConversations } from "./utils.mjs";
 
 const app = express();
 const port = 3001;

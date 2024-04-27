@@ -13,7 +13,6 @@ export class Conversation {
     this.systemPrompt = systemPrompt;
     this.model = model;
     this.conversationId = uuidv4();
-    console.log("Started conversationId: %s", this.conversationId);
     this.redisClient;
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -39,6 +38,7 @@ export class Conversation {
         title: "",
       }),
     );
+    console.log("Started conversationId: %s", this.conversationId);
   }
 
   async getConversationHistory() {
@@ -50,7 +50,10 @@ export class Conversation {
     const conversationHistory = JSON.parse(conversationString);
 
     // Some sanity checks.
-    assert("messages" in conversationHistory && "title" in conversationHistory);
+    const expectedFields = ["model", "systemPrompt", "messages", "title"];
+    const fieldInConversationHistory = (field) => field in conversationHistory;
+
+    assert(expectedFields.every(fieldInConversationHistory));
     assert(
       Array.isArray(conversationHistory.messages) &&
         typeof conversationHistory.title === "string",
@@ -90,6 +93,8 @@ export class Conversation {
       JSON.stringify({
         messages: newConversationHistory,
         title: conversationTitle,
+        model: this.model,
+        systemPrompt: this.systemPrompt,
       }),
     );
   }
@@ -107,7 +112,12 @@ export class Conversation {
     );
     await this.redisClient.set(
       this.conversationId,
-      JSON.stringify({ messages: conversation.messages, title: title }),
+      JSON.stringify({
+        messages: conversation.messages,
+        title: title,
+        model: this.model,
+        systemPrompt: this.systemPrompt,
+      }),
     );
   }
 
